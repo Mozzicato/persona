@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  # One-shot: build data + models. Skips a step if its artifact already exists.
+  init:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./models_store:/app/models_store
+    command: >
+      bash -lc "
+        [ -f /app/data/processed/reviews_amazon.parquet ] || python -m app.data.ingest;
+        [ -f /app/data/processed/playstore_reviews.parquet ] || python -m app.data.playstore;
+        [ -f /app/data/processed/nigerian_voice_samples.json ] || python -m app.data.nigerian_voice;
+        python -m app.data.unify;
+        [ -f /app/models_store/item_index.pkl ] || python -m app.retrieval;
+        [ -f /app/models_store/rating_lgbm.pkl ] || python -m app.rating_model;
+        echo 'init complete'
+      "
+    profiles: ["init"]
+
+  api:
+    build: .
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models_store:/app/models_store
+    depends_on:
+      init:
+        condition: service_completed_successfully
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

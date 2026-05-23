@@ -1,0 +1,13 @@
+data/raw/
+data/processed/
+data/personas/
+data/memory/
+models_store/
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.idea/
+.vscode/
