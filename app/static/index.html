@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PersonaFlow AI — Live Demo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  .gradient-bg { background: linear-gradient(135deg, #047857 0%, #064e3b 100%); }
+  .star { color: #facc15; }
+  .star.empty { color: #d1d5db; }
+  .pulse-dot { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
+  }
+  .emotion-chip {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 0.8rem; font-weight: 600; margin-left: 8px;
+  }
+  .emotion-delighted, .emotion-satisfied, .emotion-upbeat, .emotion-cheerful { background: #d1fae5; color: #065f46; }
+  .emotion-neutral { background: #e5e7eb; color: #374151; }
+  .emotion-annoyed { background: #fef3c7; color: #92400e; }
+  .emotion-frustrated, .emotion-disappointed, .emotion-stressed { background: #fee2e2; color: #991b1b; }
+  details > summary { cursor: pointer; user-select: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .review-quote {
+    font-style: italic; font-size: 1.05rem; line-height: 1.7;
+    border-left: 4px solid #10b981; padding: 12px 18px;
+    background: #f0fdf4; border-radius: 0 8px 8px 0; color: #1f2937;
+  }
+</style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<!-- HERO -->
+<header class="gradient-bg text-white">
+  <div class="max-w-5xl mx-auto px-6 py-12">
+    <h1 class="text-4xl md:text-5xl font-bold tracking-tight">PersonaFlow AI</h1>
+    <p class="mt-3 text-lg text-emerald-100">
+      Behavior-aware review simulation &amp; recommendation for Nigerian consumers.
+    </p>
+    <p class="mt-1 text-sm text-emerald-200">
+      DSN &times; BCT LLM Agent Challenge 2026
+    </p>
+
+    <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+        <div class="text-emerald-200 text-xs uppercase tracking-wide">NDCG@10</div>
+        <div class="text-3xl font-bold mt-1">0.649</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+        <div class="text-emerald-200 text-xs uppercase tracking-wide">Hit@10</div>
+        <div class="text-3xl font-bold mt-1">0.675</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+        <div class="text-emerald-200 text-xs uppercase tracking-wide">Rating RMSE</div>
+        <div class="text-3xl font-bold mt-1">0.710</div>
+        <div class="text-xs text-emerald-200 mt-1">vs baseline 1.090</div>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+        <div class="text-emerald-200 text-xs uppercase tracking-wide">Domains</div>
+        <div class="text-3xl font-bold mt-1">5</div>
+        <div class="text-xs text-emerald-200 mt-1">food + 4 NG app categories</div>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/docs" class="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-lg text-sm font-semibold transition">Swagger UI &rarr;</a>
+      <a href="https://github.com/Mozzicato/persona" target="_blank" class="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-lg text-sm font-semibold transition">View Code on GitHub &rarr;</a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-6 py-12">
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-900">Try it live</h2>
+    <p class="text-gray-600 mt-1">Three pre-filled examples. Click <em>Run</em> to see real LLM-generated output. Each call hits Groq + LightGBM live.</p>
+  </div>
+
+  <!-- TASK A CARD -->
+  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+      <div>
+        <div class="inline-block bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-1 rounded">TASK A</div>
+        <h3 class="text-xl font-bold mt-2">Simulate a Review</h3>
+        <p class="text-gray-600 text-sm mt-1">Persona-aware rating + Nigerian-flavored review for an item, in context.</p>
+      </div>
+      <button id="btn-a" onclick="runTaskA()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
+    </div>
+
+    <details class="text-sm text-gray-700">
+      <summary class="text-emerald-700 font-medium hover:underline">Show request body</summary>
+      <pre id="body-a" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
+    </details>
+
+    <div id="result-a" class="mt-4 hidden"></div>
+  </section>
+
+  <!-- TASK B CARD -->
+  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+      <div>
+        <div class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">TASK B &mdash; CROSS-DOMAIN</div>
+        <h3 class="text-xl font-bold mt-2">Recommend NG Apps to a Food User</h3>
+        <p class="text-gray-600 text-sm mt-1">Takes a user with Amazon Fine Food history and recommends Nigerian apps (rides, e-commerce, fintech, food delivery). Each candidate is simulated through Task A's reasoner before ranking.</p>
+        <p class="text-amber-700 text-xs mt-2">⏱ Takes ~40-60 s &mdash; runs N LLM calls (one per candidate).</p>
+      </div>
+      <button id="btn-b" onclick="runTaskB()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
+    </div>
+
+    <details class="text-sm text-gray-700">
+      <summary class="text-blue-700 font-medium hover:underline">Show request body</summary>
+      <pre id="body-b" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
+    </details>
+
+    <div id="result-b" class="mt-4 hidden"></div>
+  </section>
+
+  <!-- COLD START CARD -->
+  <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
+      <div>
+        <div class="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">COLD-START</div>
+        <h3 class="text-xl font-bold mt-2">Simulate a Review for a Brand-New User</h3>
+        <p class="text-gray-600 text-sm mt-1">User has zero history. Pass optional preference hints. System builds a neutral persona and still produces a coherent, persona-consistent review.</p>
+      </div>
+      <button id="btn-c" onclick="runColdStart()" class="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
+    </div>
+
+    <details class="text-sm text-gray-700">
+      <summary class="text-purple-700 font-medium hover:underline">Show request body</summary>
+      <pre id="body-c" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
+    </details>
+
+    <div id="result-c" class="mt-4 hidden"></div>
+  </section>
+
+  <!-- ARCHITECTURE FOOTER -->
+  <section class="mt-12 grid md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="font-bold text-gray-900">How it works</h3>
+      <ol class="mt-3 space-y-2 text-sm text-gray-700 list-decimal list-inside">
+        <li><b>Persona Extraction</b> — deterministic stats + LLM-refined traits</li>
+        <li><b>Behavioral Memory</b> — tagged recent experiences (<code>late_delivery</code>, <code>overpriced</code>…)</li>
+        <li><b>Context Agent</b> — auto-detects NG flags (<code>salary_week</code>, <code>festive</code>, …)</li>
+        <li><b>Reasoning Planner</b> — per-request ranking weight vector</li>
+        <li><b>Hybrid Retriever</b> — TF-IDF + item-item CF + quality + popularity</li>
+        <li><b>Behavioral Simulator</b> — runs Task A reasoner per candidate</li>
+        <li><b>Dynamic Re-ranker</b> — blends retrieval signals + simulated rating</li>
+      </ol>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="font-bold text-gray-900">Data sources</h3>
+      <ul class="mt-3 space-y-2 text-sm text-gray-700">
+        <li>📦 <b>Amazon Fine Food Reviews</b> (Kaggle): 68,015 reviews / 1,891 active users for rich persona histories</li>
+        <li>📱 <b>Google Play Store</b>: 6,000 real Nigerian reviews across 10 apps (Chowdeck, Bolt, Jumia, Opay, …)</li>
+        <li>🗣 <b>Nigerian voice</b>: 36 curated few-shot examples mined from above for the generator prompt</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="mt-12 text-center text-sm text-gray-500">
+    Built by <a href="https://github.com/Mozzicato" class="underline">Mozzicato</a> for DSN &times; BCT LLM Agent Challenge 2026.
+  </p>
+</main>
+
+<script>
+const BODY_A = {
+  user_id: "A100WO06OQR8BQ",
+  item: { name: "Chowdeck", category: "food_delivery", item_id: "com.chowdeck.app" },
+  context: { time: "night", weather: "rainy", traffic_heavy: true }
+};
+
+const BODY_B = {
+  user_id: "A100WO06OQR8BQ",
+  context: { time: "evening", mood: "tired" },
+  top_n: 3,
+  cross_domain: true
+};
+
+const BODY_C = {
+  user_id: "totally_new_user_xyz123",
+  item: { name: "Bolt Food", category: "food_delivery" },
+  context: { time: "afternoon", salary_week: true },
+  cold_start_hints: { budget_sensitive: true, likes: ["affordable", "fast"] }
+};
+
+document.getElementById("body-a").textContent = JSON.stringify(BODY_A, null, 2);
+document.getElementById("body-b").textContent = JSON.stringify(BODY_B, null, 2);
+document.getElementById("body-c").textContent = JSON.stringify(BODY_C, null, 2);
+
+function stars(n) {
+  const filled = Math.round(n);
+  let s = "";
+  for (let i = 1; i <= 5; i++) s += `<span class="${i <= filled ? 'star' : 'star empty'}">★</span>`;
+  return s;
+}
+
+function emotionChip(e) {
+  if (!e) return "";
+  return `<span class="emotion-chip emotion-${e.toLowerCase()}">${e}</span>`;
+}
+
+function setLoading(btn, on) {
+  if (on) {
+    btn.dataset.original = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add("opacity-60", "cursor-not-allowed");
+    btn.innerHTML = '<span class="pulse-dot">●</span> Running…';
+  } else {
+    btn.disabled = false;
+    btn.classList.remove("opacity-60", "cursor-not-allowed");
+    btn.textContent = btn.dataset.original || "Run";
+  }
+}
+
+function showError(el, err) {
+  el.classList.remove("hidden");
+  el.innerHTML = `
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+      <b>Error:</b> ${err}
+    </div>`;
+}
+
+async function callApi(path, body) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+function renderReview(data) {
+  const html = `
+    <div class="space-y-3">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="text-2xl">${stars(data.rating)}</div>
+        <div class="text-lg font-semibold text-gray-700">${data.rating}/5</div>
+        ${emotionChip(data.emotional_state)}
+      </div>
+      <div class="review-quote">${data.review}</div>
+      <details>
+        <summary class="text-sm text-gray-600 hover:text-gray-900 font-medium">Why this rating? (reasoning)</summary>
+        <div class="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded">${data.reasoning || ''}</div>
+      </details>
+      ${data.key_drivers && data.key_drivers.length ? `
+      <div class="text-xs text-gray-600">
+        <b>Key drivers:</b> ${data.key_drivers.map(d => `<span class="inline-block bg-gray-100 px-2 py-0.5 rounded mx-1">${d}</span>`).join('')}
+      </div>` : ''}
+      ${data.context_used && data.context_used.nigerian_flags && data.context_used.nigerian_flags.length ? `
+      <div class="text-xs text-gray-600">
+        <b>NG context flags:</b> ${data.context_used.nigerian_flags.map(f => `<span class="inline-block bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded mx-1">${f}</span>`).join('')}
+      </div>` : ''}
+      <details>
+        <summary class="text-xs text-gray-500 hover:text-gray-800 font-medium">Raw JSON</summary>
+        <pre class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
+      </details>
+    </div>
+  `;
+  return html;
+}
+
+function renderRecs(data) {
+  const recs = data.recommendations || [];
+  const planSummary = data.plan ? `<div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900 mb-3"><b>Strategy:</b> ${data.plan.plan_summary || ''}</div>` : '';
+  const html = `
+    <div>
+      ${planSummary}
+      <div class="space-y-3">
+        ${recs.map((r, i) => `
+          <div class="border border-gray-200 rounded-lg p-4 bg-white">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl font-bold text-gray-300 w-8 text-center">${i+1}</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <div class="font-semibold text-gray-900">${r.item || r.item_id}</div>
+                  ${emotionChip(r.emotional_state)}
+                  ${r.retrieval_source ? `<span class="text-xs bg-gray-100 px-2 py-0.5 rounded">${r.retrieval_source}</span>` : ''}
+                </div>
+                <div class="text-sm text-gray-700 mt-1">${stars(r.predicted_rating)} ${r.predicted_rating}/5</div>
+                <div class="text-sm text-gray-600 mt-2">${r.reason || ''}</div>
+                ${r.key_drivers && r.key_drivers.length ? `
+                  <div class="text-xs text-gray-500 mt-2">
+                    Drivers: ${r.key_drivers.map(d => `<span class="inline-block bg-gray-100 px-2 py-0.5 rounded mx-1">${d}</span>`).join('')}
+                  </div>` : ''}
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <details class="mt-4">
+        <summary class="text-xs text-gray-500 hover:text-gray-800 font-medium">Raw JSON</summary>
+        <pre class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
+      </details>
+    </div>
+  `;
+  return html;
+}
+
+async function runTaskA() {
+  const btn = document.getElementById("btn-a");
+  const el = document.getElementById("result-a");
+  setLoading(btn, true);
+  el.classList.add("hidden");
+  try {
+    const data = await callApi("/simulate-review", BODY_A);
+    el.innerHTML = renderReview(data);
+    el.classList.remove("hidden");
+  } catch (e) {
+    showError(el, e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function runTaskB() {
+  const btn = document.getElementById("btn-b");
+  const el = document.getElementById("result-b");
+  setLoading(btn, true);
+  el.classList.add("hidden");
+  try {
+    const data = await callApi("/recommend", BODY_B);
+    el.innerHTML = renderRecs(data);
+    el.classList.remove("hidden");
+  } catch (e) {
+    showError(el, e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function runColdStart() {
+  const btn = document.getElementById("btn-c");
+  const el = document.getElementById("result-c");
+  setLoading(btn, true);
+  el.classList.add("hidden");
+  try {
+    const data = await callApi("/simulate-review", BODY_C);
+    el.innerHTML = renderReview(data);
+    el.classList.remove("hidden");
+  } catch (e) {
+    showError(el, e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+}
+</script>
+</body>
+</html>

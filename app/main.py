@@ -9,11 +9,13 @@ Endpoints:
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app import memory as memory_mod
@@ -55,84 +57,17 @@ class RecommendRequest(BaseModel):
     cold_start_hints: dict[str, Any] | None = None
 
 
-LANDING_HTML = """<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>PersonaFlow AI</title>
-<style>
-  body { font-family: -apple-system, system-ui, Segoe UI, Arial, sans-serif;
-         max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.55;
-         color: #222; background: #fafafa; }
-  h1 { margin-bottom: 6px; }
-  .tag { color: #666; font-style: italic; margin-top: 0; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
-  .card { background: #fff; padding: 18px 20px; border-radius: 10px;
-          box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .card h3 { margin-top: 0; }
-  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px;
-         font-size: 0.9em; }
-  a.btn { display: inline-block; background: #0a7d4b; color: #fff;
-          padding: 10px 16px; text-decoration: none; border-radius: 6px;
-          margin-top: 8px; margin-right: 8px; font-weight: 600; }
-  a.btn:hover { background: #086239; }
-  ul { padding-left: 20px; }
-  .metric { font-size: 1.4em; font-weight: 700; color: #0a7d4b; }
-</style>
-</head>
-<body>
-<h1>PersonaFlow AI</h1>
-<p class="tag">Behavior-aware review simulation + recommendation for Nigerian consumers.</p>
-
-<p>
-  <a class="btn" href="/docs">Open Swagger UI &rarr;</a>
-  <a class="btn" style="background:#444" href="https://github.com/Mozzicato/persona" target="_blank">View Code on GitHub</a>
-</p>
-
-<div class="grid">
-  <div class="card">
-    <h3>Task A</h3>
-    <code>POST /simulate-review</code>
-    <p>Predict rating + generate persona-consistent Nigerian-flavored review for an item.</p>
-  </div>
-  <div class="card">
-    <h3>Task B</h3>
-    <code>POST /recommend</code>
-    <p>Behavior-aware recommendations with per-candidate simulation.
-       Set <code>cross_domain: true</code> for food&rarr;apps.</p>
-  </div>
-  <div class="card">
-    <h3>Cold-start</h3>
-    <code>POST /persona</code>
-    <p>Unknown users get a neutral persona; pass <code>cold_start_hints</code>
-       to seed preferences.</p>
-  </div>
-  <div class="card">
-    <h3>Browse users</h3>
-    <code>GET /users?limit=20</code>
-    <p>Sample real Amazon Fine Food user IDs you can plug into the other endpoints.</p>
-  </div>
-</div>
-
-<h3 style="margin-top:32px">Headline metrics (temporal hold-out, 1,421 users)</h3>
-<ul>
-  <li>NDCG@10 = <span class="metric">0.649</span></li>
-  <li>Hit@10 = <span class="metric">0.675</span></li>
-  <li>MRR@10 = <span class="metric">0.642</span></li>
-  <li>Rating RMSE (LightGBM) = <span class="metric">0.710</span> &nbsp;(35% better than user-mean baseline 1.090)</li>
-</ul>
-
-<p style="margin-top:32px; color:#888; font-size:0.85em">
-  Built for the DSN &times; BCT LLM Agent Challenge 2026. Source on
-  <a href="https://github.com/Mozzicato/persona">GitHub</a>.
-</p>
-</body>
-</html>"""
+STATIC_DIR = Path(__file__).parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/", response_class=HTMLResponse)
 def landing():
-    return LANDING_HTML
+    index = STATIC_DIR / "index.html"
+    if index.exists():
+        return FileResponse(str(index), media_type="text/html")
+    return HTMLResponse("<h1>PersonaFlow AI</h1><p>See <a href='/docs'>/docs</a></p>")
 
 
 @app.get("/health")
