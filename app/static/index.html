@@ -30,6 +30,16 @@
     border-left: 4px solid #10b981; padding: 12px 18px;
     background: #f0fdf4; border-radius: 0 8px 8px 0; color: #1f2937;
   }
+  .label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .input {
+    width: 100%; padding: 8px 10px; border: 1px solid #d1d5db;
+    border-radius: 6px; font-size: 0.9rem; background: #fff;
+  }
+  .input:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,.2); }
+  .chk { accent-color: #10b981; margin-right: 6px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .checkbox-row { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; }
+  .help { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -76,7 +86,11 @@
 <main class="max-w-5xl mx-auto px-6 py-12">
   <div class="mb-8">
     <h2 class="text-2xl font-bold text-gray-900">Try it live</h2>
-    <p class="text-gray-600 mt-1">Three pre-filled examples. Click <em>Run</em> to see real LLM-generated output. Each call hits Groq + LightGBM live.</p>
+    <p class="text-gray-600 mt-1">Three pre-filled examples — <b>edit any field</b> and click <em>Run</em>.
+      Each call hits Groq LLM + LightGBM in real time. Need real user IDs?
+      <button onclick="loadUserIds()" class="text-emerald-700 underline font-medium">Load sample user IDs</button>
+      <span id="user-list" class="text-xs text-gray-600"></span>
+    </p>
   </div>
 
   <!-- TASK A CARD -->
@@ -90,8 +104,52 @@
       <button id="btn-a" onclick="runTaskA()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
     </div>
 
-    <details class="text-sm text-gray-700">
-      <summary class="text-emerald-700 font-medium hover:underline">Show request body</summary>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="label">User ID</label>
+        <input id="a-user" class="input" value="A100WO06OQR8BQ" />
+        <div class="help">A real Amazon Fine Food user. Or try any unknown ID for cold-start fallback.</div>
+      </div>
+      <div>
+        <label class="label">Item name</label>
+        <input id="a-item-name" class="input" value="Chowdeck" />
+      </div>
+      <div>
+        <label class="label">Item category</label>
+        <select id="a-item-cat" class="input">
+          <option value="food_delivery" selected>food_delivery</option>
+          <option value="ride_hailing">ride_hailing</option>
+          <option value="ecommerce">ecommerce</option>
+          <option value="fintech">fintech</option>
+          <option value="food">food</option>
+          <option value="restaurant">restaurant</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Time of day</label>
+        <select id="a-time" class="input">
+          <option value="morning">morning</option>
+          <option value="afternoon">afternoon</option>
+          <option value="evening">evening</option>
+          <option value="night" selected>night</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <label class="label">Nigerian context flags (toggle to include)</label>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="a-rainy" class="chk" checked /> Rainy weather</label>
+        <label><input type="checkbox" id="a-traffic" class="chk" checked /> Heavy traffic</label>
+        <label><input type="checkbox" id="a-salary" class="chk" /> Salary week</label>
+        <label><input type="checkbox" id="a-festive" class="chk" /> Festive (Dec)</label>
+        <label><input type="checkbox" id="a-fuel" class="chk" /> Fuel scarcity</label>
+        <label><input type="checkbox" id="a-power" class="chk" /> Power outage</label>
+      </div>
+    </div>
+
+    <details class="mt-4 text-sm text-gray-700">
+      <summary class="text-emerald-700 font-medium hover:underline">Show request JSON</summary>
       <pre id="body-a" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
     </details>
 
@@ -102,16 +160,57 @@
   <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
       <div>
-        <div class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">TASK B &mdash; CROSS-DOMAIN</div>
-        <h3 class="text-xl font-bold mt-2">Recommend NG Apps to a Food User</h3>
-        <p class="text-gray-600 text-sm mt-1">Takes a user with Amazon Fine Food history and recommends Nigerian apps (rides, e-commerce, fintech, food delivery). Each candidate is simulated through Task A's reasoner before ranking.</p>
+        <div class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">TASK B</div>
+        <h3 class="text-xl font-bold mt-2">Recommend &mdash; with cross-domain option</h3>
+        <p class="text-gray-600 text-sm mt-1">Each candidate is simulated through Task A's reasoner before ranking.
+          Enable <i>cross-domain</i> to recommend Nigerian apps to a food-history user.</p>
         <p class="text-amber-700 text-xs mt-2">⏱ Takes ~40-60 s &mdash; runs N LLM calls (one per candidate).</p>
       </div>
       <button id="btn-b" onclick="runTaskB()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
     </div>
 
-    <details class="text-sm text-gray-700">
-      <summary class="text-blue-700 font-medium hover:underline">Show request body</summary>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div>
+        <label class="label">User ID</label>
+        <input id="b-user" class="input" value="A100WO06OQR8BQ" />
+      </div>
+      <div>
+        <label class="label">Time of day</label>
+        <select id="b-time" class="input">
+          <option value="morning">morning</option>
+          <option value="afternoon">afternoon</option>
+          <option value="evening" selected>evening</option>
+          <option value="night">night</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">User mood</label>
+        <select id="b-mood" class="input">
+          <option value="tired" selected>tired</option>
+          <option value="hungry">hungry</option>
+          <option value="cheerful">cheerful</option>
+          <option value="stressed">stressed</option>
+          <option value="curious">curious</option>
+          <option value="neutral">neutral</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Top-N to return</label>
+        <input id="b-topn" class="input" type="number" min="1" max="10" value="3" />
+        <div class="help">Each rec = 1 LLM call. Keep small for speed.</div>
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Mode</label>
+        <div class="checkbox-row mt-1">
+          <label><input type="checkbox" id="b-cross" class="chk" checked /> Cross-domain (food user &rarr; NG apps)</label>
+          <label><input type="checkbox" id="b-salary" class="chk" /> Salary week</label>
+          <label><input type="checkbox" id="b-festive" class="chk" /> Festive</label>
+        </div>
+      </div>
+    </div>
+
+    <details class="mt-4 text-sm text-gray-700">
+      <summary class="text-blue-700 font-medium hover:underline">Show request JSON</summary>
       <pre id="body-b" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
     </details>
 
@@ -123,14 +222,47 @@
     <div class="flex items-start justify-between flex-wrap gap-3 mb-4">
       <div>
         <div class="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">COLD-START</div>
-        <h3 class="text-xl font-bold mt-2">Simulate a Review for a Brand-New User</h3>
-        <p class="text-gray-600 text-sm mt-1">User has zero history. Pass optional preference hints. System builds a neutral persona and still produces a coherent, persona-consistent review.</p>
+        <h3 class="text-xl font-bold mt-2">Brand-new user with preference hints</h3>
+        <p class="text-gray-600 text-sm mt-1">User has zero history. Pass optional preference hints &mdash; system builds a neutral persona on the fly and produces a coherent, persona-consistent review.</p>
       </div>
       <button id="btn-c" onclick="runColdStart()" class="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-5 py-2.5 rounded-lg transition">Run</button>
     </div>
 
-    <details class="text-sm text-gray-700">
-      <summary class="text-purple-700 font-medium hover:underline">Show request body</summary>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="label">New user ID (anything; must NOT exist in catalogue)</label>
+        <input id="c-user" class="input" value="totally_new_user_xyz123" />
+      </div>
+      <div>
+        <label class="label">Item name</label>
+        <input id="c-item-name" class="input" value="Bolt Food" />
+      </div>
+      <div>
+        <label class="label">Item category</label>
+        <select id="c-item-cat" class="input">
+          <option value="food_delivery" selected>food_delivery</option>
+          <option value="ride_hailing">ride_hailing</option>
+          <option value="ecommerce">ecommerce</option>
+          <option value="fintech">fintech</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Likes (comma-separated)</label>
+        <input id="c-likes" class="input" value="affordable, fast" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="label">Hints + Context</label>
+        <div class="checkbox-row mt-1">
+          <label><input type="checkbox" id="c-budget" class="chk" checked /> Budget-sensitive user</label>
+          <label><input type="checkbox" id="c-salary" class="chk" checked /> Salary week</label>
+          <label><input type="checkbox" id="c-festive" class="chk" /> Festive</label>
+          <label><input type="checkbox" id="c-rainy" class="chk" /> Rainy</label>
+        </div>
+      </div>
+    </div>
+
+    <details class="mt-4 text-sm text-gray-700">
+      <summary class="text-purple-700 font-medium hover:underline">Show request JSON</summary>
       <pre id="body-c" class="mt-2 bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto"></pre>
     </details>
 
@@ -167,29 +299,67 @@
 </main>
 
 <script>
-const BODY_A = {
-  user_id: "A100WO06OQR8BQ",
-  item: { name: "Chowdeck", category: "food_delivery", item_id: "com.chowdeck.app" },
-  context: { time: "night", weather: "rainy", traffic_heavy: true }
-};
+function buildA() {
+  const ctx = { time: document.getElementById("a-time").value };
+  if (document.getElementById("a-rainy").checked) ctx.weather = "rainy";
+  if (document.getElementById("a-traffic").checked) ctx.traffic_heavy = true;
+  if (document.getElementById("a-salary").checked) ctx.salary_week = true;
+  if (document.getElementById("a-festive").checked) ctx.festive = true;
+  if (document.getElementById("a-fuel").checked) ctx.fuel_scarcity = true;
+  if (document.getElementById("a-power").checked) ctx.power_outage = true;
+  return {
+    user_id: document.getElementById("a-user").value.trim(),
+    item: {
+      name: document.getElementById("a-item-name").value.trim(),
+      category: document.getElementById("a-item-cat").value
+    },
+    context: ctx
+  };
+}
 
-const BODY_B = {
-  user_id: "A100WO06OQR8BQ",
-  context: { time: "evening", mood: "tired" },
-  top_n: 3,
-  cross_domain: true
-};
+function buildB() {
+  const ctx = {
+    time: document.getElementById("b-time").value,
+    mood: document.getElementById("b-mood").value
+  };
+  if (document.getElementById("b-salary").checked) ctx.salary_week = true;
+  if (document.getElementById("b-festive").checked) ctx.festive = true;
+  return {
+    user_id: document.getElementById("b-user").value.trim(),
+    context: ctx,
+    top_n: parseInt(document.getElementById("b-topn").value || "3", 10),
+    cross_domain: document.getElementById("b-cross").checked
+  };
+}
 
-const BODY_C = {
-  user_id: "totally_new_user_xyz123",
-  item: { name: "Bolt Food", category: "food_delivery" },
-  context: { time: "afternoon", salary_week: true },
-  cold_start_hints: { budget_sensitive: true, likes: ["affordable", "fast"] }
-};
+function buildC() {
+  const likes = document.getElementById("c-likes").value.split(",").map(s => s.trim()).filter(Boolean);
+  const ctx = { time: "afternoon" };
+  if (document.getElementById("c-salary").checked) ctx.salary_week = true;
+  if (document.getElementById("c-festive").checked) ctx.festive = true;
+  if (document.getElementById("c-rainy").checked) ctx.weather = "rainy";
+  return {
+    user_id: document.getElementById("c-user").value.trim(),
+    item: {
+      name: document.getElementById("c-item-name").value.trim(),
+      category: document.getElementById("c-item-cat").value
+    },
+    context: ctx,
+    cold_start_hints: {
+      budget_sensitive: document.getElementById("c-budget").checked,
+      likes: likes
+    }
+  };
+}
 
-document.getElementById("body-a").textContent = JSON.stringify(BODY_A, null, 2);
-document.getElementById("body-b").textContent = JSON.stringify(BODY_B, null, 2);
-document.getElementById("body-c").textContent = JSON.stringify(BODY_C, null, 2);
+function refreshBodies() {
+  document.getElementById("body-a").textContent = JSON.stringify(buildA(), null, 2);
+  document.getElementById("body-b").textContent = JSON.stringify(buildB(), null, 2);
+  document.getElementById("body-c").textContent = JSON.stringify(buildC(), null, 2);
+}
+document.addEventListener("input", refreshBodies);
+document.addEventListener("change", refreshBodies);
+window.addEventListener("DOMContentLoaded", refreshBodies);
 
 function stars(n) {
   const filled = Math.round(n);
@@ -232,6 +402,19 @@ async function callApi(path, body) {
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
   return r.json();
+}
+
+async function loadUserIds() {
+  try {
+    const r = await fetch("/users?limit=8");
+    const d = await r.json();
+    const el = document.getElementById("user-list");
+    el.innerHTML = "Examples: " + d.user_ids.map(u =>
+      `<code class="bg-gray-200 px-1.5 py-0.5 rounded mx-1 cursor-pointer" onclick="navigator.clipboard.writeText('${u}'); this.style.background='#a7f3d0';" title="click to copy">${u}</code>`
+    ).join("");
+  } catch (e) {
+    document.getElementById("user-list").textContent = "(failed to load — " + e.message + ")";
+  }
 }
 
 function renderReview(data) {
@@ -306,7 +489,7 @@ async function runTaskA() {
   setLoading(btn, true);
   el.classList.add("hidden");
   try {
-    const data = await callApi("/simulate-review", BODY_A);
+    const data = await callApi("/simulate-review", buildA());
     el.innerHTML = renderReview(data);
     el.classList.remove("hidden");
   } catch (e) {
@@ -322,7 +505,7 @@ async function runTaskB() {
   setLoading(btn, true);
   el.classList.add("hidden");
   try {
-    const data = await callApi("/recommend", BODY_B);
+    const data = await callApi("/recommend", buildB());
     el.innerHTML = renderRecs(data);
     el.classList.remove("hidden");
   } catch (e) {
@@ -338,7 +521,7 @@ async function runColdStart() {
   setLoading(btn, true);
   el.classList.add("hidden");
   try {
-    const data = await callApi("/simulate-review", BODY_C);
+    const data = await callApi("/simulate-review", buildC());
     el.innerHTML = renderReview(data);
     el.classList.remove("hidden");
   } catch (e) {

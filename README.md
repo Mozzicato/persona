@@ -2,6 +2,9 @@
 
 **Behavior-aware recommendation and review simulation for dynamic Nigerian consumers.**
 
+🚀 **Live demo:** https://huggingface.co/spaces/mozzic/personaflow
+📂 **Code:** https://github.com/Mozzicato/persona
+
 PersonaFlow models each user as an *evolving behavioral agent* rather than a
 static preference vector. Two tasks, one architecture:
 
@@ -10,6 +13,75 @@ static preference vector. Two tasks, one architecture:
 - **Task B — Recommendation** (`POST /recommend`): behavior-aware
   recommendations with cross-domain support and cold-start handling. Task A
   is embedded *inside* Task B — every candidate is simulated before ranking.
+
+---
+
+## 🧪 How to use the live demo
+
+The fastest way to evaluate PersonaFlow: open the live demo and use the
+interactive UI. No setup needed.
+
+**Open:** [https://mozzic-personaflow.hf.space](https://mozzic-personaflow.hf.space)
+
+You'll see three test cards, each with **editable form fields** and a **Run** button:
+
+### 🟢 Card 1 — Task A: Simulate a Review
+
+What it does: predicts a rating and generates a persona-aware Nigerian-voice
+review for any item under any context.
+
+Fields you can edit:
+- **User ID** — defaults to a real Amazon Fine Food user (`A100WO06OQR8BQ`). Click *Load sample user IDs* below the heading to see more real IDs. Or enter any random string for a cold-start.
+- **Item name + category** — what the user is reviewing (e.g. Chowdeck / food_delivery).
+- **Time of day** — morning / afternoon / evening / night.
+- **Nigerian context flags** — toggle rainy, heavy traffic, salary week, festive, fuel scarcity, power outage. These shape the reasoner's output.
+
+Click **Run** → in ~5 s you'll see:
+- ⭐⭐⭐ Star rating + emotion chip (e.g. "frustrated", "satisfied")
+- The review text in a green quote box
+- *Why this rating?* — expandable reasoning explaining which persona traits + context flags drove the prediction
+- *Raw JSON* — the full API response
+
+### 🔵 Card 2 — Task B: Recommend (with cross-domain option)
+
+What it does: returns top-N personalised recommendations. With
+`cross_domain: true` it deliberately recommends items from domains the user
+has NOT touched (food → Nigerian apps).
+
+Fields you can edit:
+- **User ID, time, mood, top-N**
+- **Cross-domain checkbox** — flips between same-domain food recommendations and cross-domain Nigerian apps
+- **Salary week / Festive** — context flags
+
+Click **Run** → in ~40-60 s (multiple LLM calls, one per candidate) you'll see:
+- 📋 The planner's **strategy** at the top (one-sentence plain English)
+- Top-N ranked items, each with:
+  - Predicted rating + emotion chip
+  - The reasoner's explanation of *why* this item fits the user right now
+  - Key drivers (e.g. "high quality sensitivity", "recent price complaints")
+  - Retrieval source (collaborative / semantic / popularity / item_quality)
+
+### 🟣 Card 3 — Cold-Start: Brand-new user
+
+What it does: a user with **zero history** in our catalogue still gets a
+coherent persona-driven review.
+
+Fields you can edit:
+- **New user ID** — any string that doesn't exist in our dataset
+- **Item name + category**
+- **Likes** (comma-separated) — preference hints to seed the neutral persona
+- **Budget-sensitive, salary week, festive, rainy** flags
+
+Click **Run** → see how the system synthesises a persona from hints alone.
+
+### ⚙️ Power user: direct API access
+
+If you prefer Swagger or curl:
+- **Swagger UI:** https://mozzic-personaflow.hf.space/docs
+- **Sample IDs:** `GET /users?limit=20`
+- **Endpoints:** `POST /simulate-review` (Task A), `POST /recommend` (Task B), `POST /persona` (view full persona for a user)
+
+Full sample request/response bodies are in [`SUBMISSION.md`](SUBMISSION.md).
 
 ## Headline numbers
 
